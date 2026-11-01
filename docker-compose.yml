@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: weather-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-weatherdb}
+      POSTGRES_USER: ${DB_USER:-weather}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-weatherpass}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-weather} -d ${DB_NAME:-weatherdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - weather-net
+
+  backend:
+    build: ./backend
+    container_name: weather-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-weatherdb}
+      DB_USER: ${DB_USER:-weather}
+      DB_PASSWORD: ${DB_PASSWORD:-weatherpass}
+      DB_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - weather-net
+
+  frontend:
+    build: ./frontend
+    container_name: weather-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - weather-net
+
+volumes:
+  db_data:
+
+networks:
+  weather-net:
+    driver: bridge

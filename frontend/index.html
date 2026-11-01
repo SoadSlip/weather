@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather App — DevOps Pet Project</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🌤️ Weather Forecast</h1>
+
+    <form id="search-form" class="search-form">
+      <input id="city-input" type="text" placeholder="Введите город (например, Moscow)" autocomplete="off" />
+      <button type="submit">Поиск</button>
+    </form>
+
+    <div id="error" class="error hidden"></div>
+    <div id="weather" class="weather-card hidden"></div>
+
+    <h2>История запросов</h2>
+    <div id="history" class="history"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

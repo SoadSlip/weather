@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start services
+        run: docker compose up -d --build
+
+      - name: Wait for services
+        run: sleep 15
+
+      - name: Health check
+        run: curl -f http://localhost:8080/api/health
+
+      - name: Weather API test
+        run: curl -f "http://localhost:8080/api/weather?city=Moscow"
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
