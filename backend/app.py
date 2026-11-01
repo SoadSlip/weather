@@ -61,41 +61,26 @@ def get_weather():
     if not city:
         return jsonify({"error": "Параметр 'city' обязателен"}), 400
 
-    # Публичное API: Open-Meteo (без ключей)
     try:
-        geo_resp = requests.get(
-            "https://geocoding-api.open-meteo.com/v1/search",
-            params={"name": city, "count": 1, "language": "ru"},
-            timeout=10,
+        resp = requests.get(
+            f"https://wttr.in/{city}?format=j1&lang=ru",
+            timeout=20,
+            headers={"User-Agent": "weather-app-devops-petproject/1.0"},
         )
-        geo_data = geo_resp.json()
-        if not geo_data.get("results"):
-            return jsonify({"error": f"Город '{city}' не найден"}), 404
+        resp.raise_for_status()
+        data = resp.json()
 
-        loc = geo_data["results"][0]
-        lat, lon = loc["latitude"], loc["longitude"]
-
-        weather_resp = requests.get(
-            "https://api.open-meteo.com/v1/forecast",
-            params={
-                "latitude": lat,
-                "longitude": lon,
-                "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
-                "timezone": "auto",
-            },
-            timeout=10,
-        )
-        weather_data = weather_resp.json()
-        current = weather_data["current"]
+        current = data["current_condition"][0]
+        area = (data.get("nearest_area") or [{}])[0]
 
         result = {
-            "city": loc["name"],
-            "country": loc.get("country", ""),
-            "temperature": current["temperature_2m"],
-            "humidity": current["relative_humidity_2m"],
-            "wind_speed": current["wind_speed_10m"],
-            "weather_code": current["weather_code"],
-            "description": weather_code_to_text(current["weather_code"]),
+            "city": city.title(),
+            "country": (area.get("country") or [{}])[0].get("value", ""),
+            "temperature": float(current["temp_C"]),
+            "humidity": int(current["humidity"]),
+            "wind_speed": float(current["windspeedKmph"]),
+            "weather_code": 0,
+            "description": current["weatherDesc"][0]["value"],
         }
 
         # Сохраняем в БД
@@ -115,7 +100,6 @@ def get_weather():
 
     except requests.RequestException as e:
         return jsonify({"error": f"Ошибка внешнего API: {str(e)}"}), 502
-
 
 @app.route("/api/history", methods=["GET"])
 def history():
